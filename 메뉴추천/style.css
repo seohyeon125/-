@@ -1,0 +1,211 @@
+/* 픽셀 폰트 정의 */
+@font-face {
+  font-family: 'DungGeunMo';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'DungGeunMo', monospace, sans-serif;
+  image-rendering: pixelated; /* 픽셀 선명도 유지 */
+}
+
+body {
+  background-color: #fef08a; /* 따뜻한 레몬 파스텔 옐로우 */
+  /* 도트 패턴 배경 디자인 */
+  background-image: radial-gradient(#fde047 2px, transparent 2px);
+  background-size: 20px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* 레트로 픽셀 테두리 카드 컨테이너 */
+.pixel-card {
+  background: #fffbeb;
+  border: 4px solid #451a03;
+  box-shadow: 6px 6px 0px #b45309;
+  padding: 2rem 1.5rem;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.pixel-title {
+  font-size: 1.8rem;
+  color: #78350f;
+  text-shadow: 2px 2px 0px #fde047;
+  margin-bottom: 0.3rem;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #92400e;
+  margin-bottom: 1.2rem;
+}
+
+/* 날씨 박스 스타일 */
+.weather-box {
+  background: #fef3c7;
+  border: 3px solid #78350f;
+  padding: 0.8rem;
+  margin-bottom: 1.2rem;
+  position: relative;
+}
+
+.pixel-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #d97706;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border: 2px solid #451a03;
+}
+
+#weather-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+#weather-icon {
+  font-size: 2.2rem;
+}
+
+.weather-text {
+  text-align: left;
+  color: #451a03;
+  font-size: 0.95rem;
+}
+
+/* 결과 출력 영역 */
+.result-box {
+  background: #ffffff;
+  border: 3px solid #78350f;
+  padding: 1.5rem 1rem;
+  margin-bottom: 1.2rem;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-wrapper {
+  width: 96px;
+  height: 96px;
+  background: #fef9c3;
+  border: 3px solid #b45309;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+#menu-img {
+  width: 64px;
+  height: 64px;
+}
+
+#menu-name {
+  font-size: 1.4rem;
+  color: #451a03;
+  margin-bottom: 0.5rem;
+}
+
+.reason-text {
+  font-size: 0.85rem;
+  color: #b45309;
+  word-break: keep-all;
+}
+
+/* 레트로 버튼 디자인 */
+.pixel-btn {
+  width: 100%;
+  background: #f59e0b;
+  color: #ffffff;
+  border: 3px solid #451a03;
+  box-shadow: 0px 4px 0px #78350f;
+  padding: 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.pixel-btn:hover {
+  background: #d97706;
+}
+
+.pixel-btn:active {
+  box-shadow: 0px 0px 0px #78350f;
+  transform: translateY(4px);
+}
+
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 메뉴 추가 폼 영역 */
+.add-form-box {
+  background: #fef3c7;
+  border: 3px solid #78350f;
+  padding: 1rem;
+  margin-top: 1.2rem;
+  text-align: left;
+}
+
+.add-form-box.hidden {
+  display: none;
+}
+
+.form-title {
+  font-size: 1.1rem;
+  color: #78350f;
+  margin-bottom: 0.8rem;
+  text-align: center;
+}
+
+.input-group {
+  margin-bottom: 0.8rem;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: #451a03;
+  margin-bottom: 4px;
+}
+
+.input-group input, .input-group select {
+  width: 100%;
+  padding: 8px;
+  border: 2px solid #78350f;
+  background: #fff;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.input-group input:focus, .input-group select:focus {
+  background: #fffbe2;
+}
+
+.save-style {
+  background: #ec4899;
+  box-shadow: 0px 4px 0px #9d174d;
+  margin-top: 4px;
+}
+.save-style:hover { background: #db2777; }
