@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>초코비 🚀</title>
+    <style>
+        * { padding: 0; margin: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        body { 
+            background: #050508; 
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            touch-action: none;
+        }
+        
+        #gameContainer { 
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        canvas { 
+            background: radial-gradient(circle, #10111a 0%, #050508 100%);
+            display: block; 
+            width: 100%;
+            height: 100%;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(5, 5, 8, 0.9);
+            z-index: 10;
+        }
+
+        h1 {
+            color: #00ffcc;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px #00ffcc;
+            text-align: center;
+        }
+
+        .game-btn {
+            padding: 18px 45px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #00ffcc;
+            background: #11121b;
+            border: 3px solid #00ffcc;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 0 20px #00ffcc;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.1s ease;
+        }
+        .game-btn:active {
+            transform: scale(0.95);
+            color: #11121b;
+            background: #00ffcc;
+        }
+
+        #gameOverOverlay { display: none; }
+
+        .hud {
+            position: absolute;
+            pointer-events: none;
+            color: #fff;
+            font-weight: bold;
+            font-size: 16px;
+            z-index: 5;
+            text-shadow: 0 0 5px #000;
+        }
+        #scoreHUD { top: 40px; left: 20px; }
+        #stageHUD { top: 40px; right: 20px; color: #ffff00; }
+        
+        #bossHPBarContainer {
+            display: none;
+            position: absolute;
+            top: 75px;
+            left: 10%;
+            width: 80%;
+            height: 10px;
+            background: #222;
+            border: 1px solid #ff0055;
+            border-radius: 5px;
+            z-index: 5;
+            overflow: hidden;
+        }
+        #bossHPBar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff0055, #ff5500);
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body>
+
+<div id="gameContainer">
+    <div id="startOverlay" class="overlay">
+        <h1>CYBER SPACE<br>SHOT</h1>
+        <button class="game-btn" onclick="startGame()">START GAME</button>
+    </div>
+
+    <div id="gameOverOverlay" class="overlay">
+        <h1 style="color: #ff0055; text-shadow: 0 0 15px #ff0055;">SYSTEM CRASHED</h1>
+        <p id="finalScore" style="color: #fff; font-size: 20px; margin-bottom: 25px; font-weight: bold;"></p>
+        <button class="game-btn" onclick="resetGame()">RESTART</button>
+    </div>
+
+    <div id="scoreHUD" class="hud">SCORE: 0</div>
+    <div id="stageHUD" class="hud">STAGE 1</div>
+    
+    <div id="bossHPBarContainer">
+        <div id="bossHPBar"></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const startOverlay = document.getElementById("startOverlay");
+    const gameOverOverlay = document.getElementById("gameOverOverlay");
+    const scoreHUD = document.getElementById("scoreHUD");
+    const stageHUD = document.getElementById("stageHUD");
+    const bossHPBarContainer = document.getElementById("bossHPBarContainer");
+    const bossHPBar = document.getElementById("bossHPBar");
+
+    let isPlaying = false;
+    let isGameOver = false;
+    let score = 0;
+    let stage = 1;
+
+    const player = {
+        x: window.innerWidth / 2,
+        y: window.innerHeight * 0.85,
+        size: 20
+    };
+
+    let lasers = [];
+    let enemies = [];
+    let particles = [];
+    let boss = null;
+
+    let lastShotTime = 0;
+    const shotInterval = 160;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        player.y = canvas.height * 0.85;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function startGame() {
+        startOverlay.style.display = "none";
+        isPlaying = true;
+        update();
+    }
+
+    function resetGame() {
+        score = 0;
+        stage = 1;
+        lasers = [];
+        enemies = [];
+        particles = [];
+        boss = null;
+        isGameOver = false;
+        
+        scoreHUD.innerText = `SCORE: ${score}`;
+        stageHUD.innerText = `STAGE ${stage}`;
+        bossHPBarContainer.style.display = "none";
+        gameOverOverlay.style.display = "none";
+        
+        player.x = canvas.width / 2;
+        player.y = canvas.height * 0.85;
+
+        update();
+    }
+
+    function movePlayer(clientX) {
+        if (!isPlaying || isGameOver) return;
+        const rect = canvas.getBoundingClientRect();
+        player.x = clientX - rect.left;
+        
+        if (player.x < player.size) player.x = player.size;
+        if (player.x > canvas.width - player.size) player.x = canvas.width - player.size;
+        
+        autoFire();
+    }
+
+    canvas.addEventListener("touchstart", (e) => movePlayer(e.touches[0].clientX), { passive: false });
+    canvas.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        movePlayer(e.touches[0].clientX);
+    }, { passive: false });
+    canvas.addEventListener("mousemove", (e) => movePlayer(e.clientX));
+
+    function autoFire() {
+        const now = Date.now();
+        if (now - lastShotTime > shotInterval) {
+            lasers.push({ x: player.x, y: player.y - player.size, speed: 12 });
+            lastShotTime = now;
+        }
+    }
+
+    function spawnEnemy() {
+        if (isGameOver || boss) return;
+
+        let spawnChance = 0.02 + (stage * 0.005); 
+        if (Math.random() < spawnChance) {
+            const size = Math.random() * 15 + 18;
+            enemies.push({
+                x: Math.random() * (canvas.width - size) + size / 2,
+                y: -size,
+                size: size,
+                speed: Math.random() * (1.0 + stage * 0.2) + 0.8,
+                color: `hsl(${Math.random() * 60 + (260 - stage * 20)}, 100%, 60%)`
+            });
+        }
+    }
+
+    function spawnBoss() {
+        bossHPBarContainer.style.display = "block";
+        bossHPBar.style.width = "100%";
+        boss = {
+            x: canvas.width / 2,
+            y: -100,
+            targetY: canvas.height * 0.18,
+            size: 60,
+            hp: 20 + stage * 15,
+            maxHp: 20 + stage * 15,
+            speed: 1.5,
+            dir: 1,
+            color: "#ff0055"
+        };
+    }
+
+    function createExplosion(x, y, color, count = 12) {
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                radius: Math.random() * 3 + 1,
+                alpha: 1,
+                color: color
+            });
+        }
+    }
+
+    function update() {
+        if (isGameOver) {
+            document.getElementById("finalScore").innerText = `FINAL SCORE: ${score}`;
+            gameOverOverlay.style.display = "flex";
+            return;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 🛠️ [패치 반영 완료] 1스테이지 보스는 1500점, 2스테이지 보스는 3500점에 출격!
+        if (!boss && ((stage === 1 && score >= 1500) || (stage === 2 && score >= 3500))) {
+            spawnBoss();
+            stageHUD.innerText = `🚨 BOSS STAGE ${stage} 🚨`;
+        }
+
+        // 플레이어 캐릭터 그리기
+        ctx.beginPath();
+        ctx.moveTo(player.x, player.y - player.size);
+        ctx.lineTo(player.x - player.size, player.y + player.size);
+        ctx.lineTo(player.x + player.size, player.y + player.size);
+        ctx.closePath();
+        ctx.fillStyle = "#00ffcc";
+        ctx.shadowBlur = 18;
+        ctx.shadowColor = "#00ffcc";
+        ctx.fill();
+
+        // 내 레이저 미사일 연산
+        for (let i = lasers.length - 1; i >= 0; i--) {
+            lasers[i].y -= lasers[i].speed;
+            ctx.beginPath();
+            ctx.rect(lasers[i].x - 2, lasers[i].y, 4, 20);
+            ctx.fillStyle = "#00ffff";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00ffff";
+            ctx.fill();
+
+            if (lasers[i].y < 0) lasers.splice(i, 1);
+        }
+
+        // 일반 잡몹 연산
+        spawnEnemy();
+        for (let eIndex = enemies.length - 1; eIndex >= 0; eIndex--) {
+            const enemy = enemies[eIndex];
+            enemy.y += enemy.speed;
+
+            ctx.beginPath();
+            ctx.moveTo(enemy.x, enemy.y - enemy.size / 2);
+            ctx.lineTo(enemy.x + enemy.size / 2, enemy.y);
+            ctx.lineTo(enemy.x, enemy.y + enemy.size / 2);
+            ctx.lineTo(enemy.x - enemy.size / 2, enemy.y);
+            ctx.closePath();
+            ctx.fillStyle = enemy.color;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = enemy.color;
+            ctx.fill();
+
+            for (let lIndex = lasers.length - 1; lIndex >= 0; lIndex--) {
+                const laser = lasers[lIndex];
+                if (Math.hypot(laser.x - enemy.x, laser.y - enemy.y) < enemy.size) {
+                    createExplosion(enemy.x, enemy.y, enemy.color);
+                    enemies.splice(eIndex, 1);
+                    lasers.splice(lIndex, 1);
+                    score += 100;
+                    scoreHUD.innerText = `SCORE: ${score}`;
+                    break;
+                }
+            }
+
+            if (isGameOver) return;
+
+            if (enemy.y > canvas.height + enemy.size || Math.hypot(player.x - enemy.x, player.y - enemy.y) < enemy.size + player.size) {
+                isGameOver = true;
+            }
+        }
+
+        // 보스 기체 연산
+        if (boss) {
+            if (boss.y < boss.targetY) {
+                boss.y += 2;
+            } else {
+                boss.x += boss.speed * boss.dir;
+                if (boss.x < boss.size || boss.x > canvas.width - boss.size) {
+                    boss.dir *= -1;
+                }
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(boss.x, boss.y + boss.size / 2);
+            ctx.lineTo(boss.x + boss.size, boss.y - boss.size / 2);
+            ctx.lineTo(boss.x - boss.size, boss.y - boss.size / 2);
+            ctx.closePath();
+            ctx.fillStyle = boss.color;
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = boss.color;
+            ctx.fill();
+
+            for (let lIndex = lasers.length - 1; lIndex >= 0; lIndex--) {
+                const laser = lasers[lIndex];
+                if (Math.hypot(laser.x - boss.x, laser.y - boss.y) < boss.size) {
+                    lasers.splice(lIndex, 1);
+                    boss.hp--;
+                    createExplosion(laser.x, laser.y, "#ffffff", 4);
+                    
+                    bossHPBar.style.width = `${(boss.hp / boss.maxHp) * 100}%`;
+
+                    if (boss.hp <= 0) {
+                        createExplosion(boss.x, boss.y, boss.color, 40);
+                        boss = null;
+                        bossHPBarContainer.style.display = "none";
+                        score += 1000; // 격파 보너스 1000점!
+                        scoreHUD.innerText = `SCORE: ${score}`;
+                        stage++;
+                        stageHUD.innerText = `STAGE ${stage}`;
+                        break;
+                    }
+                }
+            }
+            
+            if (boss && Math.hypot(player.x - boss.x, player.y - boss.y) < boss.size + player.size) {
+                isGameOver = true;
+            }
+        }
+
+        // 폭발 이펙트 파티클 연산
+        for (let pIndex = particles.length - 1; pIndex >= 0; pIndex--) {
+            const p = particles[pIndex];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.alpha -= 0.025;
+            if (p.alpha <= 0) {
+                particles.splice(pIndex, 1);
+            } else {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = p.color;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        ctx.shadowBlur = 0;
+        requestAnimationFrame(update);
+    }
+</script>
+
+</body>
+</html>
